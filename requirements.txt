@@ -1,0 +1,7 @@
+sentence_transformers==3.3.0
+pinecone
+google-generativeai
+numpy
+scikit-learn
+flask
+textblob

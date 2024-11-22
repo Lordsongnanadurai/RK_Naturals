@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Interface</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .chat-bot-container {
+            background-color: #141414;
+            height: 60px;
+            width: 60px;
+            border-radius: 50%;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chat-bot-container.expanded {
+            width: 400px;
+            height: 500px;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .chat-icon {
+            font-size: 2em;
+            color: springgreen;
+            transition: opacity 0.3s ease;
+        }
+
+        .chat-bot-container.expanded .chat-icon {
+            opacity: 0;
+        }
+
+        .form-container {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .chat-bot-container.expanded .form-container {
+            display: flex;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-input {
+            display: flex;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            background-color: #007bff;
+            color: #ffffff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .chat-message {
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        .chat-response {
+            background-color: #d9f7be;
+            margin-top: 10px; /* Light green background for bot response */
+        }
+
+        .chat-user {
+            background-color: #f1f1f1; /* Light grey background for user message */
+            text-align: right;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-bot-container" id="chatbotCircle" onclick="toggleChatbot(event)">
+        <!-- Robot Icon with Springgreen Color -->
+        <i class="fas fa-robot chat-icon"></i>
+
+        <!-- Chatbot Form Container -->
+        <div class="form-container">
+            <div class="chat-container" id="chatContainer">
+                <!-- Messages will be appended here dynamically -->
+            </div>
+        
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Type your message here">
+                <button id="submitBtn">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get references to the chatbot button and form container
+        const chatbotCircle = document.getElementById('chatbotCircle');
+        const formContainer = document.querySelector('.form-container');
+
+        // Function to toggle chatbot circle expansion
+        function toggleChatbot(event) {
+            event.stopPropagation(); // Prevents closing when clicking inside
+            chatbotCircle.classList.toggle('expanded');
+        }
+
+        // Prevent clicks inside the expanded form from closing it
+        formContainer.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+
+        // Close the chatbot when clicking outside of it
+        document.addEventListener('click', function(event) {
+            if (!chatbotCircle.contains(event.target)) {
+                chatbotCircle.classList.remove('expanded');
+            }
+        });
+
+        // Submit button functionality for sending message
+        document.getElementById('submitBtn').addEventListener('click', function() {
+            const inputData = document.getElementById('userInput').value;
+
+            if (inputData.trim() === "") return;  // Don't send empty input
+
+            // Append user message
+            appendMessage(inputData, 'user');
+
+            // Clear the input field
+            document.getElementById('userInput').value = '';
+
+            // Send the input data to the server
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')  // CSRF token if needed
+                },
+                body: JSON.stringify({ message: inputData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Append chatbot response
+                appendMessage(data.response, 'bot');
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // Function to append a new message (either user or bot)
+        function appendMessage(message, sender) {
+            const chatContainer = document.getElementById('chatContainer');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message');
+            if (sender === 'bot') {
+                messageDiv.classList.add('chat-response');
+            } else {
+                messageDiv.classList.add('chat-user');
+            }
+
+            messageDiv.innerText = message;
+            chatContainer.appendChild(messageDiv);
+
+            // Scroll to the bottom of the chat container to show the latest message
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

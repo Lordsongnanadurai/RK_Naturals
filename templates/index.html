@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot</title>
+    <Style>
+        /* Global Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f1f5f8; /* Light gray background */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Full screen height */
+}
+
+/* Chat Container */
+.chat-container {
+    background-color: #F9E0A4; /* Light saffron color */
+    width: 400px; /* Fixed width for the chat window */
+    height: 500px; /* Fixed height */
+    border-radius: 20px; /* Rounded corners */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Messages Section */
+.messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+    margin-bottom: 70px; /* Space for the message box */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between messages */
+}
+
+/* Message Styling */
+.user-message, .bot-message {
+    max-width: 70%; /* Messages occupy 70% of the width */
+    padding: 12px;
+    border-radius: 20px;
+    word-wrap: break-word;
+    line-height: 1.5;
+    display: inline-block;
+}
+
+/* User message (green) */
+.user-message {
+    background-color: #4CAF50; /* Green */
+    color: white;
+    text-align: left;
+    align-self: flex-end; /* Align to the right */
+}
+
+/* Bot message (blue) */
+.bot-message {
+    background-color: #2196F3; /* Blue */
+    color: white;
+    text-align: left;
+    align-self: flex-start; /* Align to the left */
+}
+
+/* Input Box and Send Button */
+input[type="text"] {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    width: calc(100% - 120px); /* Adjust width to leave space for button */
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 25px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+button {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    padding: 12px 20px;
+    font-size: 16px;
+    background-color: #4CAF50; /* Green */
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #45a049; /* Darker green */
+}
+    </Style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="messages" id="messages"></div>
+        <input type="text" id="userInput" placeholder="Type your message here">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const userMessage = document.getElementById("userInput").value;
+            if (!userMessage) return;
+
+            // Display user message
+            addMessage(userMessage, "user-message");
+            document.getElementById("userInput").value = "";  // Clear input field
+
+            // Send message to the backend
+            const response = await fetch("http://127.0.0.1:5000/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMessage })
+            });
+
+            const data = await response.json();
+            addMessage(data.response, "bot-message");
+        }
+
+        function addMessage(message, className) {
+            const messageContainer = document.createElement("div");
+            messageContainer.className = className;
+            messageContainer.textContent = message;
+
+            const messagesDiv = document.getElementById("messages");
+            messagesDiv.appendChild(messageContainer);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;  // Auto-scroll to the latest message
+        }
+    </script>
+</body>
+</html>
